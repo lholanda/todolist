@@ -1,0 +1,27 @@
+networks:
+  todolist_net:
+    driver: bridge
+
+# verificar aqui , volumes
+volumes:
+  mysql:
+    name: todolist_vol
+    #external: true
+
+services:
+  todolist:
+    image: mysql:8.4
+    ports:
+      - 3306:3306
+    networks:
+      - todolist_net 
+    environment:
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - mysql:/var/lib/mysql
+
+  

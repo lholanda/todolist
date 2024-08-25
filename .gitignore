@@ -1,0 +1,4 @@
+.env
+/node_modules
+eslint.config.mjs
+readme_dev.md 
