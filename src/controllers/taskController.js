@@ -28,6 +28,8 @@ const testTask = (req, res) => {
     //const result = await taskModel.getTask(req, res);
     throw new ApiError('Este erro foi lancado daqui d dentro do try', 400);
     return res.status(200).json(result);
+
+    
 }
 
 module.exports = {
