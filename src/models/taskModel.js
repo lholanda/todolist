@@ -1,7 +1,18 @@
 const connection = require('../database/connection');
-const middleware_errors = require('../config/errors');
 
-const getTask = async function (req, res) {
+//const connection = require('../database/db');
+const baseError = require('../middlewares/customErrors');
+/*
+()=>{
+
+    connection.connect((error) => {
+        if (error) {
+           console.log(error)
+        }src/routes/routes.js
+    })
+} 
+*/
+const getTask = async (req, res) => {
     let taskFilter = '';
     if (req.query.id || req.query.title) {
         if (req.query.id && !req.query.title) { // ?id='algo'
@@ -16,47 +27,37 @@ const getTask = async function (req, res) {
 
     const sqlSelect = `SELECT * FROM tasks ${taskFilter}`;
     try {
+
+        // tenho que tratar a exececao bando
+        const  sqlTest = 'SELECT COUNT(*) AS qty FROM tasks';
+        const [ qty ] = await connection.execute(sqlTest);
+        console.log(qty)
+
         const [tasks] = await connection.execute(sqlSelect); // array destruct [tasks, buffer]
-        //console.log(taskList.length);
-        if (tasks.length === 0) {
-            res.status(404).json({
-                message: `Task not found !!!`
-            });
-        } else {
-            res.status(200).json(tasks);
-        }
+        return tasks;
     } catch (error) {
-        middleware_errors(error, req, res);
+        baseError(error, req, res);
     } finally {
-        connection.releaseConnection();
+        //connection.releaseConnection();
     }
 };
 
-const createTask = async (req, res) => {
-    const { title } = req.body;
-
-    console.log(title);
+const createTask = async (task) => {
+    const { title } = task;
 
     const sqlCreate = `INSERT INTO tasks (title, status, create_at) VALUES ( ?, ?, ?)`;
-
     const dateUTC = new Date(Date.now()).toUTCString();
-
-    console.log(sqlCreate);
-    console.log(dateUTC);
-
+ 
     try {
-        const  [ createdTask ]  = await connection.execute(sqlCreate, [title, 'pendente', dateUTC ])
-
-        res.status(201).json({ 
-            id: createdTask.insertId,
-            title: title,
-            status: "pendente",
-            create_At: dateUTC 
-
-        })
-
+        const [createdTask] = await connection.execute(sqlCreate, [title, 'pendente', dateUTC])
+        return {
+                    id: createdTask.insertId,
+                    title: title,
+                    status: "pendente",
+                    create_at: dateUTC
+                }
     } catch (error) {
-        middleware_errors(error, req, res);
+        baseError(error);
     } finally {
         connection.releaseConnection();
     }
@@ -66,26 +67,25 @@ const updateTask = () => {
 
 };
 
-const deleteTask = async function (req, res) {
+const deleteTask = async function (params_id) {
     try {
-        const id = req.params.id ? req.params.id : ``
+        const { id } = params_id;
+
         if (id) {
             const sqlDelete = `DELETE  FROM tasks WHERE id=${id}`;
             const result = await connection.execute(sqlDelete);
+            
+            console.log(typeof(result[0].affectedRows))
+            console.log(result[0].affectedRows > 0)
 
-            if (result) {
-                res.status(200).json({
-                    message: `task ${id} excluido`
-                })
+            if (result[0].affectedRows > 0) {
+                return { message: `task ${id} excluido` }
             } else {
-                res.status(404).json({
-                    message: `task not found`
-                })
+                return { message: `task not found` }
             }
-            console.log(result)
         }
     } catch (error) {
-        middleware_errors(error, req, res);
+        baseError(error);
     } finally {
         connection.releaseConnection();
     }
